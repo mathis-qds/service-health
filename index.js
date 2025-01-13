@@ -109,7 +109,7 @@ app.get('/services/:id/logs', authenticate, (req, res) => {
 
     const logFiles = Array.isArray(service.logs) ? service.logs : [service.logs];
     const logPromises = logFiles.map(logFile =>
-        new Promise((resolve) => {
+        new Promise(resolve => {
             fs.readFile(logFile, 'utf8', (error, data) => {
                 resolve({
                     file: logFile,

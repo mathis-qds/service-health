@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Status Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js/lib/common/highlight.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/highlight.js/styles/github-dark.css" rel="stylesheet">
     <style>
         #dashboard { display: none; }
         .service-card { margin-bottom: 1rem; }
         .service-card .card-header { font-weight: bold; }
+        #log-display-container { display: none; margin-top: 2rem; }
+        pre { max-height: 400px; overflow-y: auto; }
     </style>
 </head>
 <body>
@@ -37,6 +41,16 @@
             <div id="service-cards" class="row">
                 <!-- Service cards will be dynamically loaded here -->
             </div>
+            <!-- Log Display Container -->
+            <div id="log-display-container" class="card">
+                <div class="card-header">
+                    <h3>Logs for <span id="log-service-name"></span></h3>
+                </div>
+                <div class="card-body">
+                    <pre><code id="log-content" class="plaintext"></code></pre>
+                    <button id="download-log" class="btn btn-secondary mt-3">Download Log</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -45,6 +59,11 @@
         const dashboard = document.getElementById('dashboard');
         const loginDiv = document.getElementById('login-form');
         const serviceCardsContainer = document.getElementById('service-cards');
+        const logDisplayContainer = document.getElementById('log-display-container');
+        const logServiceName = document.getElementById('log-service-name');
+        const logContent = document.getElementById('log-content');
+        const downloadLogButton = document.getElementById('download-log');
+        let currentLogFile = '';
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -89,34 +108,11 @@
                                 Status: <strong class="${statusClass}">${service.status}</strong>
                             </p>
                             <button class="btn btn-primary btn-sm" onclick="restartService(${service.id})">Restart</button>
-                            <div id="logs-${service.id}">
-                                <!-- Logs will be dynamically added here -->
-                            </div>
+                            <button class="btn btn-secondary btn-sm" onclick="viewLogs(${service.id}, '${service.name}')">View Logs</button>
                         </div>
                     </div>
                 `;
                 serviceCardsContainer.appendChild(card);
-
-                // Fetch and display logs for the service
-                fetchLogs(service.id);
-            });
-        }
-
-        async function fetchLogs(serviceId) {
-            const response = await fetch(`/services/${serviceId}/logs`);
-            if (!response.ok) {
-                alert(`Failed to fetch logs for service ID ${serviceId}.`);
-                return;
-            }
-
-            const logs = await response.json();
-            const logsContainer = document.getElementById(`logs-${serviceId}`);
-            logs.forEach(log => {
-                const logButton = document.createElement('button');
-                logButton.className = 'btn btn-secondary btn-sm me-2';
-                logButton.innerText = `Download ${log.file.split('/').pop()}`;
-                logButton.onclick = () => downloadLog(serviceId, log.file);
-                logsContainer.appendChild(logButton);
             });
         }
 
@@ -130,14 +126,30 @@
             }
         }
 
-        function downloadLog(serviceId, logFile) {
-            const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(logFile)}`;
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = logFile.split('/').pop();
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+        async function viewLogs(serviceId, serviceName) {
+            const response = await fetch(`/services/${serviceId}/logs`);
+            if (!response.ok) {
+                alert(`Failed to fetch logs for ${serviceName}.`);
+                return;
+            }
+
+            const logs = await response.json();
+            const log = logs[0]; // Assuming one log file for now
+            currentLogFile = log.file;
+            logServiceName.textContent = serviceName;
+            logContent.textContent = log.content;
+            hljs.highlightElement(logContent);
+            logDisplayContainer.style.display = 'block';
+
+            downloadLogButton.onclick = () => {
+                const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(currentLogFile)}`;
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${serviceName}-log.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
         }
     </script>
 </body>
