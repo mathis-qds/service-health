@@ -175,26 +175,32 @@
 
         const logs = await response.json();
         logTabs.innerHTML = "";
+
+        // Create tabs for logs
         logs.forEach((log, index) => {
-          const safeFileName = log.file.replace(/['"\\]/g, ""); // Sanitize filename
-          const sanitizedContent = log.content
-            .replace(/'/g, "&#39;")
-            .replace(/"/g, "&quot;"); // Escape quotes
-          const tab = document.createElement("li");
-          tab.className = "nav-item";
-          tab.innerHTML = `
-        <button class="nav-link ${
-          index === 0 ? "active" : ""
-        }" onclick="showLogContent('${safeFileName}', '${sanitizedContent}', ${serviceId}, '${serviceName}', this)">
-            ${log.file.split("/").pop()}
-        </button>
+          const logTab = document.createElement("li");
+          logTab.className = "nav-item";
+          logTab.innerHTML = `
+      <button class="nav-link ${index === 0 ? "active" : ""}" data-log-file="${
+            log.file
+          }" onclick="showLogContent('${log.file}', '${
+            log.content
+          }', ${serviceId}, '${serviceName}', this)">
+        ${log.file.split("/").pop()}
+      </button>
     `;
-          logTabs.appendChild(tab);
+          logTabs.appendChild(logTab);
         });
 
         // Show the first log by default
         if (logs.length > 0) {
-          showLogContent(logs[0].file, logs[0].content, serviceId, serviceName);
+          showLogContent(
+            logs[0].file,
+            logs[0].content,
+            serviceId,
+            serviceName,
+            logTabs.querySelector(".nav-link")
+          );
         }
 
         logServiceName.textContent = serviceName;
@@ -214,11 +220,11 @@
         // Update download button
         downloadLogButton.onclick = () => {
           const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(
-            currentLogFile
+            file
           )}`;
           const a = document.createElement("a");
           a.href = url;
-          a.download = `${serviceName}-${currentLogFile.split("/").pop()}`;
+          a.download = `${serviceName}-${file.split("/").pop()}`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
