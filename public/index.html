@@ -99,6 +99,7 @@
       const logContent = document.getElementById("log-content");
       const downloadLogButton = document.getElementById("download-log");
       let currentLogFile = "";
+      const serviceLoadingStates = {};
 
       document.addEventListener("DOMContentLoaded", () => {
         hljs.highlightAll();
@@ -138,6 +139,7 @@
             service.status === "active" ? "text-success" : "text-danger";
           const card = document.createElement("div");
           card.className = "col-md-4 service-card";
+          card.setAttribute("data-service-id", service.id);
           card.innerHTML = `
       <div class="card">
           <div class="card-header">
@@ -169,18 +171,55 @@
     `;
           serviceCardsContainer.appendChild(card);
         });
-      }
 
+        // Initialize the loading state for each service
+        services.forEach((service) => {
+          if (!(service.id in serviceLoadingStates)) {
+            serviceLoadingStates[service.id] = false;
+          }
+        });
+
+        updateLoadingStates();
+      }
       async function restartService(id) {
+        // Set the loading state for the specific service
+        serviceLoadingStates[id] = true;
+        updateLoadingStates();
+
         const response = await fetch(`/services/${id}/restart`, {
           method: "POST",
         });
+
+        // Reset the loading state after the promise resolves
+        serviceLoadingStates[id] = false;
+        updateLoadingStates();
+
         if (response.ok) {
           alert("Service restarted successfully.");
           fetchServices();
         } else {
           alert("Failed to restart service.");
         }
+      }
+
+      function updateLoadingStates() {
+        // Update the UI based on the loading state
+        document.querySelectorAll(".service-card").forEach((card) => {
+          const serviceId = card.getAttribute("data-service-id");
+          const isLoading = serviceLoadingStates[serviceId];
+          const restartButton = card.querySelector(".btn-primary");
+
+          if (isLoading) {
+            card.classList.add("loading");
+            restartButton.disabled = true;
+            restartButton.innerHTML =
+              '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Restarting...';
+          } else {
+            card.classList.remove("loading");
+            restartButton.disabled = false;
+            restartButton.textContent = "Restart";
+          }
+        });
       }
 
       async function viewSpecificLog(serviceId, logFile, logName) {
