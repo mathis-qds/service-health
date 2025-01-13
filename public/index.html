@@ -32,6 +32,9 @@
         max-height: 400px;
         overflow-y: auto;
       }
+      #log-tabs {
+        margin-bottom: 1rem;
+      }
     </style>
   </head>
   <body>
@@ -71,6 +74,7 @@
             <h3>Logs for <span id="log-service-name"></span></h3>
           </div>
           <div class="card-body">
+            <ul id="log-tabs" class="nav nav-tabs"></ul>
             <pre><code id="log-content" class="plaintext"></code></pre>
             <button id="download-log" class="btn btn-secondary mt-3">
               Download Log
@@ -89,6 +93,7 @@
         "log-display-container"
       );
       const logServiceName = document.getElementById("log-service-name");
+      const logTabs = document.getElementById("log-tabs");
       const logContent = document.getElementById("log-content");
       const downloadLogButton = document.getElementById("download-log");
       let currentLogFile = "";
@@ -169,23 +174,45 @@
         }
 
         const logs = await response.json();
-        const log = logs[0]; // Assuming one log file for now
-        currentLogFile = log.file;
-        logServiceName.textContent = serviceName;
-        logContent.textContent = log.content;
+        logTabs.innerHTML = "";
+        logs.forEach((log, index) => {
+          const tab = document.createElement("li");
+          tab.className = "nav-item";
+          tab.innerHTML = `
+            <button class="nav-link ${index === 0 ? "active" : ""}" onclick="showLogContent('${log.file}', '${log.content}', ${serviceId}, '${serviceName}', this)">
+              ${log.file.split("/").pop()}
+            </button>
+          `;
+          logTabs.appendChild(tab);
+        });
 
-        // Re-apply syntax highlighting to the updated content
+        // Show the first log by default
+        if (logs.length > 0) {
+          showLogContent(logs[0].file, logs[0].content, serviceId, serviceName);
+        }
+
+        logServiceName.textContent = serviceName;
+        logDisplayContainer.style.display = "block";
+      }
+
+      function showLogContent(file, content, serviceId, serviceName, tab) {
+        currentLogFile = file;
+        logContent.textContent = content;
         hljs.highlightElement(logContent);
 
-        logDisplayContainer.style.display = "block";
+        // Update active tab
+        const tabs = logTabs.querySelectorAll(".nav-link");
+        tabs.forEach((t) => t.classList.remove("active"));
+        if (tab) tab.classList.add("active");
 
+        // Update download button
         downloadLogButton.onclick = () => {
           const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(
             currentLogFile
           )}`;
           const a = document.createElement("a");
           a.href = url;
-          a.download = `${serviceName}-log.txt`;
+          a.download = `${serviceName}-${currentLogFile.split("/").pop()}`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
