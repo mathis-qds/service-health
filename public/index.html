@@ -198,28 +198,29 @@
 }
 
 
-function showLogContent(file, content, serviceId, serviceName, tab) {
-  currentLogFile = file;
-  logContent.textContent = content;
-  hljs.highlightElement(logContent);
+      function showLogContent(file, content, serviceId, serviceName, tab) {
+        currentLogFile = file;
+        logContent.textContent = content;
+        hljs.highlightElement(logContent);
 
-  // Update active tab
-  const tabs = logTabs.querySelectorAll(".nav-link");
-  tabs.forEach((t) => t.classList.remove("active"));
-  if (tab) tab.classList.add("active");
+        // Update active tab
+        const tabs = logTabs.querySelectorAll(".nav-link");
+        tabs.forEach((t) => t.classList.remove("active"));
+        if (tab) tab.classList.add("active");
 
-  // Update download button
-  downloadLogButton.onclick = () => {
-    const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(file)}`;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${serviceName}-${file.split("/").pop()}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-}
-
+        // Update download button
+        downloadLogButton.onclick = () => {
+          const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(
+            currentLogFile
+          )}`;
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${serviceName}-${currentLogFile.split("/").pop()}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        };
+      }
     </script>
   </body>
 </html>
