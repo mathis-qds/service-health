@@ -71,6 +71,7 @@ app.get('/services', authenticate, (req, res) => {
                 resolve({
                     id: service.id,
                     name: service.name,
+                    description: service.description,
                     status: error ? 'inactive' : stdout.trim(),
                     logs: Array.isArray(service.logs) ? service.logs : [] // Include logs
                 });
