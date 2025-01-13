@@ -11,7 +11,7 @@ const PORT = 3030;
 // Middleware for parsing JSON and handling sessions
 app.use(express.json());
 app.use(session({
-    secret: 'your-secret-key',
+    secret: 'D7A5ReI4="Jy',
     resave: false,
     saveUninitialized: true,
 }));
