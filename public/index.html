@@ -176,12 +176,10 @@
         const logs = await response.json();
         logTabs.innerHTML = "";
         logs.forEach((log, index) => {
-          const safeFileName = log.file.replace(/['"\]/g, ''); // Sanitize filename to avoid conflicts
-          const sanitizedContent = log.content.replace(/'/g, "&#39;").replace(/"/g, "&quot;"); // Escape quotes for content
           const tab = document.createElement("li");
           tab.className = "nav-item";
           tab.innerHTML = `
-            <button class="nav-link ${index === 0 ? "active" : ""}" onclick="showLogContent('${safeFileName}', '${sanitizedContent}', ${serviceId}, '${serviceName}', this)">
+            <button class="nav-link ${index === 0 ? "active" : ""}" onclick="showLogContent('${log.file}', '${log.content}', ${serviceId}, '${serviceName}', this)">
               ${log.file.split("/").pop()}
             </button>
           `;
