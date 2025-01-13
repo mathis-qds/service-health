@@ -31,10 +31,6 @@
       pre {
         max-height: 400px;
         overflow-y: auto;
-        border: 1px solid #ddd;
-        padding: 10px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
       }
     </style>
   </head>
@@ -189,7 +185,14 @@
           return;
         }
 
-        const log = await response.json(); // Fetch the log content
+        const logs = await response.json(); // Expecting an array of logs
+        const log = logs.find((l) => l.file === logFile); // Match the correct log by file
+
+        if (!log || !log.content) {
+          alert(`No content found for ${logName}.`);
+          return;
+        }
+
         currentLogFile = logFile; // Store the current log file for downloading
         logServiceName.textContent = logName; // Update the displayed log name
         logContent.textContent = log.content; // Display the log content in the designated container
