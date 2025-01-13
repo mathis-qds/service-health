@@ -132,40 +132,34 @@
           const card = document.createElement("div");
           card.className = "col-md-4 service-card";
           card.innerHTML = `
-            <div class="card">
-                <div class="card-header">
-                    ${service.name}
-                </div>
-                <div class="card-body">
-                    <p class="card-text">
-                        Status: <strong class="${statusClass}">${
+      <div class="card">
+          <div class="card-header">
+              ${service.name}
+          </div>
+          <div class="card-body">
+              <p class="card-text">
+                  Status: <strong class="${statusClass}">${
             service.status
           }</strong>
-                    </p>
-                    <div>
-                        ${
-                          Array.isArray(service.logs)
-                            ? service.logs
-                                .map(
-                                  (log) => `
-                                      <button class="btn btn-info btn-sm" onclick="viewSpecificLog(${
-                                        service.id
-                                      }, '${log.file}', '${log.file
-                                    .split("/")
-                                    .pop()}')">
-                                          View ${log.file.split("/").pop()}
-                                      </button>`
-                                )
-                                .join(" ")
-                            : "<p class='text-danger'>No logs available</p>"
-                        }
-                    </div>
-                    <button class="btn btn-primary btn-sm mt-2" onclick="restartService(${
-                      service.id
-                    })">Restart</button>
-                </div>
-            </div>
-        `;
+              </p>
+              <div>
+                  ${service.logs
+                    .map(
+                      (log) => `
+                      <button class="btn btn-info btn-sm" onclick="viewSpecificLog(${
+                        service.id
+                      }, '${log}', '${log.split("/").pop()}')">
+                          View ${log.split("/").pop()}
+                      </button>`
+                    )
+                    .join(" ")}
+              </div>
+              <button class="btn btn-primary btn-sm mt-2" onclick="restartService(${
+                service.id
+              })">Restart</button>
+          </div>
+      </div>
+    `;
           serviceCardsContainer.appendChild(card);
         });
       }
