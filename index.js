@@ -64,7 +64,6 @@ const authenticate = (req, res, next) => {
     next();
 };
 
-// Endpoint to get the status of all services
 app.get('/services', authenticate, (req, res) => {
     const statusPromises = services.map(service =>
         new Promise(resolve => {
@@ -73,6 +72,7 @@ app.get('/services', authenticate, (req, res) => {
                     id: service.id,
                     name: service.name,
                     status: error ? 'inactive' : stdout.trim(),
+                    logs: Array.isArray(service.logs) ? service.logs : [] // Include logs
                 });
             });
         })
