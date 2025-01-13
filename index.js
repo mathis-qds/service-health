@@ -107,7 +107,9 @@ app.get('/services/:id/logs', authenticate, (req, res) => {
         return res.status(404).json({ error: 'Service not found' });
     }
 
-    const logFiles = Array.isArray(service.logs) ? service.logs : [service.logs];
+    // Ensure logs is an array
+    const logFiles = Array.isArray(service.logs) ? service.logs : [service.logs].filter(Boolean);
+
     const logPromises = logFiles.map(logFile =>
         new Promise(resolve => {
             fs.readFile(logFile, 'utf8', (error, data) => {
@@ -123,6 +125,7 @@ app.get('/services/:id/logs', authenticate, (req, res) => {
         .then(results => res.json(results))
         .catch(error => res.status(500).json({ error: error.message }));
 });
+
 
 // Endpoint to download a specific log file
 app.get('/services/:id/logs/download', authenticate, (req, res) => {
