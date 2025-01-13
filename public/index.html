@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Status Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #dashboard { display: none; }
+        .service-card { margin-bottom: 1rem; }
+        .service-card .card-header { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Service Status Dashboard</h1>
+
+        <!-- Login Form -->
+        <div id="login-form">
+            <h2>Login</h2>
+            <form id="login">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard">
+            <h2>Services</h2>
+            <div id="service-cards" class="row">
+                <!-- Service cards will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('login');
+        const dashboard = document.getElementById('dashboard');
+        const loginDiv = document.getElementById('login-form');
+        const serviceCardsContainer = document.getElementById('service-cards');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
+
+            if (response.ok) {
+                loginDiv.style.display = 'none';
+                dashboard.style.display = 'block';
+                fetchServices();
+            } else {
+                alert('Login failed. Please check your credentials.');
+            }
+        });
+
+        async function fetchServices() {
+        const response = await fetch('/services');
+        if (!response.ok) {
+            alert('Failed to fetch services.');
+            return;
+        }
+
+        const services = await response.json();
+        serviceCardsContainer.innerHTML = '';
+        services.forEach(service => {
+            const statusClass = service.status === 'active' ? 'text-success' : 'text-danger';
+            const card = document.createElement('div');
+            card.className = 'col-md-4 service-card';
+            card.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        ${service.name}
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Status: <strong class="${statusClass}">${service.status}</strong>
+                        </p>
+                        <button class="btn btn-primary btn-sm" onclick="restartService(${service.id})">Restart</button>
+                        <button class="btn btn-secondary btn-sm" onclick="downloadLogs(${service.id}, '${service.name}')">Download Logs</button>
+                    </div>
+                </div>
+            `;
+            serviceCardsContainer.appendChild(card);
+        });
+    }
+
+        async function restartService(id) {
+            const response = await fetch(`/services/${id}/restart`, { method: 'POST' });
+            if (response.ok) {
+                alert('Service restarted successfully.');
+                fetchServices();
+            } else {
+                alert('Failed to restart service.');
+            }
+        }
+
+        function downloadLogs(id, name) {
+            const url = `/services/${id}/logs/download`;
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}-logs.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

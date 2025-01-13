@@ -1,0 +1,15 @@
+{
+  "name": "agil-service",
+  "version": "1.0.0",
+  "description": "service health ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mathis",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "express-session": "^1.18.1"
+  }
+}
