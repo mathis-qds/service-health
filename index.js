@@ -107,7 +107,6 @@ app.get('/services/:id/logs', authenticate, (req, res) => {
         return res.status(404).json({ error: 'Service not found' });
     }
 
-    // If logs is an array, read all files; otherwise, read a single file
     const logFiles = Array.isArray(service.logs) ? service.logs : [service.logs];
     const logPromises = logFiles.map(logFile =>
         new Promise((resolve) => {
@@ -133,9 +132,10 @@ app.get('/services/:id/logs/download', authenticate, (req, res) => {
         return res.status(404).json({ error: 'Service not found' });
     }
 
-    // Extract the `file` query parameter to specify which log to download
     const logFilePath = req.query.file;
-    if (!logFilePath || !service.logs.includes(logFilePath)) {
+    const logFiles = Array.isArray(service.logs) ? service.logs : [service.logs];
+
+    if (!logFilePath || !logFiles.includes(logFilePath)) {
         return res.status(400).json({ error: 'Invalid log file requested' });
     }
 
@@ -152,6 +152,7 @@ app.get('/services/:id/logs/download', authenticate, (req, res) => {
         });
     });
 });
+
 
 
 // Serve the application
