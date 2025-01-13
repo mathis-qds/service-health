@@ -6,7 +6,7 @@ const path = require('path');
 const session = require('express-session');
 
 const app = express();
-const PORT = 3000;
+const PORT = 3030;
 
 // Middleware for parsing JSON and handling sessions
 app.use(express.json());
