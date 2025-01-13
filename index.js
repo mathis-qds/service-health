@@ -107,15 +107,25 @@ app.get('/services/:id/logs', authenticate, (req, res) => {
         return res.status(404).json({ error: 'Service not found' });
     }
 
-    fs.readFile(service.logs, 'utf8', (error, data) => {
-        if (error) {
-            return res.status(500).json({ error: `Failed to read logs for ${service.name}` });
-        }
-        res.json({ logs: data.split('\n') });
-    });
+    // If logs is an array, read all files; otherwise, read a single file
+    const logFiles = Array.isArray(service.logs) ? service.logs : [service.logs];
+    const logPromises = logFiles.map(logFile =>
+        new Promise((resolve) => {
+            fs.readFile(logFile, 'utf8', (error, data) => {
+                resolve({
+                    file: logFile,
+                    content: error ? `Failed to read: ${logFile}` : data,
+                });
+            });
+        })
+    );
+
+    Promise.all(logPromises)
+        .then(results => res.json(results))
+        .catch(error => res.status(500).json({ error: error.message }));
 });
 
-// Endpoint to download log files
+// Endpoint to download a specific log file
 app.get('/services/:id/logs/download', authenticate, (req, res) => {
     const service = services.find(s => s.id === parseInt(req.params.id));
 
@@ -123,19 +133,26 @@ app.get('/services/:id/logs/download', authenticate, (req, res) => {
         return res.status(404).json({ error: 'Service not found' });
     }
 
-    const logFilePath = path.resolve(service.logs);
+    // Extract the `file` query parameter to specify which log to download
+    const logFilePath = req.query.file;
+    if (!logFilePath || !service.logs.includes(logFilePath)) {
+        return res.status(400).json({ error: 'Invalid log file requested' });
+    }
 
-    fs.access(logFilePath, fs.constants.R_OK, (err) => {
+    const resolvedPath = path.resolve(logFilePath);
+
+    fs.access(resolvedPath, fs.constants.R_OK, (err) => {
         if (err) {
-            return res.status(500).json({ error: `Failed to access log file for ${service.name}` });
+            return res.status(500).json({ error: `Failed to access log file: ${logFilePath}` });
         }
-        res.download(logFilePath, `${service.name}-log.txt`, (downloadErr) => {
+        res.download(resolvedPath, path.basename(resolvedPath), (downloadErr) => {
             if (downloadErr) {
-                return res.status(500).json({ error: `Failed to download log file for ${service.name}` });
+                return res.status(500).json({ error: `Failed to download log file: ${logFilePath}` });
             }
         });
     });
 });
+
 
 // Serve the application
 app.listen(PORT, () => {
