@@ -68,7 +68,7 @@ const authenticate = (req, res, next) => {
 app.get('/services', authenticate, (req, res) => {
     const statusPromises = services.map(service =>
         new Promise(resolve => {
-            exec(`sudo systemctl is-active ${service.command}`, (error, stdout) => {
+            exec(`sudo systemctl is-active ${service.command}.service`, (error, stdout) => {
                 resolve({
                     id: service.id,
                     name: service.name,
@@ -91,7 +91,7 @@ app.post('/services/:id/restart', authenticate, (req, res) => {
         return res.status(404).json({ error: 'Service not found' });
     }
 
-    exec(`sudo systemctl restart ${service.command}`, (error) => {
+    exec(`sudo systemctl restart ${service.command}.service`, (error) => {
         if (error) {
             return res.status(500).json({ error: `Failed to restart ${service.name}` });
         }
