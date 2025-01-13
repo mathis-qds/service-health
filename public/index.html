@@ -132,19 +132,36 @@
           const card = document.createElement("div");
           card.className = "col-md-4 service-card";
           card.innerHTML = `
-                    <div class="card">
-                        <div class="card-header">
-                            ${service.name}
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                Status: <strong class="${statusClass}">${service.status}</strong>
-                            </p>
-                            <button class="btn btn-primary btn-sm" onclick="restartService(${service.id})">Restart</button>
-                            <button class="btn btn-secondary btn-sm" onclick="viewLogs(${service.id}, '${service.name}')">View Logs</button>
-                        </div>
-                    </div>
-                `;
+                          <div class="card">
+                              <div class="card-header">
+                                  ${service.name}
+                              </div>
+                              <div class="card-body">
+                                  <p class="card-text">
+                                      Status: <strong class="${statusClass}">${
+            service.status
+          }</strong>
+                                  </p>
+                                  <div>
+                                      ${service.logs
+                                        .map(
+                                          (log, index) => `
+                                          <button class="btn btn-info btn-sm" onclick="viewSpecificLog(${
+                                            service.id
+                                          }, '${log.file}', '${log.file
+                                            .split("/")
+                                            .pop()}')">
+                                              View ${log.file.split("/").pop()}
+                                          </button>`
+                                        )
+                                        .join(" ")}
+                                  </div>
+                                  <button class="btn btn-primary btn-sm mt-2" onclick="restartService(${
+                                    service.id
+                                  })">Restart</button>
+                              </div>
+                          </div>
+                      `;
           serviceCardsContainer.appendChild(card);
         });
       }
@@ -161,37 +178,39 @@
         }
       }
 
-      async function viewLogs(serviceId, serviceName) {
-  const response = await fetch(`/services/${serviceId}/logs`);
-  if (!response.ok) {
-    alert(`Failed to fetch logs for ${serviceName}.`);
-    return;
-  }
+      async function viewSpecificLog(serviceId, logFile, logName) {
+        const response = await fetch(
+          `/services/${serviceId}/logs?file=${encodeURIComponent(logFile)}`
+        );
+        if (!response.ok) {
+          alert(`Failed to fetch ${logName} for service.`);
+          return;
+        }
 
-  const logs = await response.json();
-  const log = logs[0]; // Assuming one log file for now
-  currentLogFile = log.file;
-  logServiceName.textContent = serviceName;
-  logContent.textContent = log.content;
+        const log = await response.json(); // Fetch the log content
+        currentLogFile = logFile; // Store the current log file for downloading
+        logServiceName.textContent = logName; // Update the displayed log name
+        logContent.textContent = log.content; // Display the log content in the designated container
 
-  // Re-apply syntax highlighting to the updated content
-  hljs.highlightElement(logContent);
+        // Apply syntax highlighting to the log content
+        hljs.highlightElement(logContent);
 
-  logDisplayContainer.style.display = "block";
+        // Show the log display container
+        logDisplayContainer.style.display = "block";
 
-  downloadLogButton.onclick = () => {
-    const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(
-      currentLogFile
-    )}`;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${serviceName}-log.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-}
-
+        // Update the download button functionality
+        downloadLogButton.onclick = () => {
+          const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(
+            logFile
+          )}`;
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = logName; // Set the file name for download
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        };
+      }
     </script>
   </body>
 </html>
