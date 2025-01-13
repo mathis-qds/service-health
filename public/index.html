@@ -67,35 +67,58 @@
         });
 
         async function fetchServices() {
-        const response = await fetch('/services');
-        if (!response.ok) {
-            alert('Failed to fetch services.');
-            return;
+            const response = await fetch('/services');
+            if (!response.ok) {
+                alert('Failed to fetch services.');
+                return;
+            }
+
+            const services = await response.json();
+            serviceCardsContainer.innerHTML = '';
+            services.forEach(service => {
+                const statusClass = service.status === 'active' ? 'text-success' : 'text-danger';
+                const card = document.createElement('div');
+                card.className = 'col-md-4 service-card';
+                card.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            ${service.name}
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                Status: <strong class="${statusClass}">${service.status}</strong>
+                            </p>
+                            <button class="btn btn-primary btn-sm" onclick="restartService(${service.id})">Restart</button>
+                            <div id="logs-${service.id}">
+                                <!-- Logs will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+                serviceCardsContainer.appendChild(card);
+
+                // Fetch and display logs for the service
+                fetchLogs(service.id);
+            });
         }
 
-        const services = await response.json();
-        serviceCardsContainer.innerHTML = '';
-        services.forEach(service => {
-            const statusClass = service.status === 'active' ? 'text-success' : 'text-danger';
-            const card = document.createElement('div');
-            card.className = 'col-md-4 service-card';
-            card.innerHTML = `
-                <div class="card">
-                    <div class="card-header">
-                        ${service.name}
-                    </div>
-                    <div class="card-body">
-                        <p class="card-text">
-                            Status: <strong class="${statusClass}">${service.status}</strong>
-                        </p>
-                        <button class="btn btn-primary btn-sm" onclick="restartService(${service.id})">Restart</button>
-                        <button class="btn btn-secondary btn-sm" onclick="downloadLogs(${service.id}, '${service.name}')">Download Logs</button>
-                    </div>
-                </div>
-            `;
-            serviceCardsContainer.appendChild(card);
-        });
-    }
+        async function fetchLogs(serviceId) {
+            const response = await fetch(`/services/${serviceId}/logs`);
+            if (!response.ok) {
+                alert(`Failed to fetch logs for service ID ${serviceId}.`);
+                return;
+            }
+
+            const logs = await response.json();
+            const logsContainer = document.getElementById(`logs-${serviceId}`);
+            logs.forEach(log => {
+                const logButton = document.createElement('button');
+                logButton.className = 'btn btn-secondary btn-sm me-2';
+                logButton.innerText = `Download ${log.file.split('/').pop()}`;
+                logButton.onclick = () => downloadLog(serviceId, log.file);
+                logsContainer.appendChild(logButton);
+            });
+        }
 
         async function restartService(id) {
             const response = await fetch(`/services/${id}/restart`, { method: 'POST' });
@@ -107,11 +130,11 @@
             }
         }
 
-        function downloadLogs(id, name) {
-            const url = `/services/${id}/logs/download`;
+        function downloadLog(serviceId, logFile) {
+            const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(logFile)}`;
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${name}-logs.txt`;
+            a.download = logFile.split('/').pop();
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
