@@ -225,7 +225,7 @@
 
       async function viewSpecificLog(serviceId, logFile, logName) {
         const response = await fetch(
-          `/services/${serviceId}/logs?file=${encodeURIComponent(logFile)}`
+          `api/services/${serviceId}/logs?file=${encodeURIComponent(logFile)}`
         );
         if (!response.ok) {
           alert(`Failed to fetch ${logName} for service.`);
