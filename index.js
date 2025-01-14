@@ -8,21 +8,6 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const PORT = 3030;
 
-// Middleware for parsing JSON
-app.use(express.json());
-app.use(cookieParser());
-
-// Configure CORS
-app.use(
-  cors({
-    origin: "http://localhost:5173", // Allow requests from this origin
-    credentials: true, // Allow credentials
-  })
-);
-
-// Serve static files
-app.use(express.static(path.join(__dirname, "public")));
-
 // Load services configuration
 const servicesFilePath = path.join(__dirname, "services.json");
 let services = [];
@@ -46,6 +31,22 @@ fs.readFile(credentialsFilePath, "utf8", (err, data) => {
   }
   credentials = JSON.parse(data);
 });
+
+
+// Middleware for parsing JSON
+app.use(express.json());
+app.use(cookieParser());
+
+// Configure CORS
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Allow requests from this origin
+    credentials: true, // Allow credentials
+  })
+);
+
+// Serve static files
+app.use(express.static(path.join(__dirname, "public")));
 
 // Attach services and credentials globally (if required)
 app.use((req, res, next) => {
