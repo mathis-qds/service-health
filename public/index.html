@@ -110,7 +110,7 @@
         const username = document.getElementById("username").value;
         const password = document.getElementById("password").value;
 
-        const response = await fetch("/login", {
+        const response = await fetch("api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ username, password }),
@@ -126,7 +126,7 @@
       });
 
       async function fetchServices() {
-        const response = await fetch("/services");
+        const response = await fetch("api/services");
         if (!response.ok) {
           alert("Failed to fetch services.");
           return;
@@ -187,7 +187,7 @@
         serviceLoadingStates[id] = true;
         updateLoadingStates();
 
-        const response = await fetch(`/services/${id}/restart`, {
+        const response = await fetch(`api/services/${id}/restart`, {
           method: "POST",
         });
 
@@ -252,7 +252,7 @@
 
         // Update the download button functionality
         downloadLogButton.onclick = () => {
-          const url = `/services/${serviceId}/logs/download?file=${encodeURIComponent(
+          const url = `api/services/${serviceId}/logs/download?file=${encodeURIComponent(
             logFile
           )}`;
           const a = document.createElement("a");
