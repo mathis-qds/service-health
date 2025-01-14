@@ -52,8 +52,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Use the routes
-app.use("/api", routes);
+app.use("/api", (req, res, next) => {
+    req.credentials = credentials;
+    req.services = services;
+    next();
+  }, routes);
 
 // Start the server
 app.listen(PORT, () => {

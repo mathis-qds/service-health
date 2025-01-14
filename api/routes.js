@@ -29,9 +29,9 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Login endpoint
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
+  const credentials = req.credentials; // Use credentials passed from the main app
 
   if (!credentials[username] || credentials[username] !== password) {
     return res.status(401).json({ error: "Invalid username or password" });
@@ -41,28 +41,24 @@ router.post("/login", (req, res) => {
   res.json({ message: "Login successful", token });
 });
 
-// Debug route (optional)
-router.get("/debug-session", (req, res) => {
-  res.json(req.session);
-});
-
 // Services route
 router.get("/services", authenticateToken, (req, res) => {
-  const statusPromises = services.map((service) =>
-    new Promise((resolve) => {
-      exec(
-        `sudo systemctl is-active ${service.command}.service`,
-        (error, stdout) => {
-          resolve({
-            id: service.id,
-            name: service.name,
-            description: service.description,
-            status: error ? "inactive" : stdout.trim(),
-            logs: Array.isArray(service.logs) ? service.logs : [], // Include logs
-          });
-        }
-      );
-    })
+  const statusPromises = services.map(
+    (service) =>
+      new Promise((resolve) => {
+        exec(
+          `sudo systemctl is-active ${service.command}.service`,
+          (error, stdout) => {
+            resolve({
+              id: service.id,
+              name: service.name,
+              description: service.description,
+              status: error ? "inactive" : stdout.trim(),
+              logs: Array.isArray(service.logs) ? service.logs : [], // Include logs
+            });
+          }
+        );
+      })
   );
 
   Promise.all(statusPromises)
@@ -80,7 +76,9 @@ router.post("/services/:id/restart", authenticateToken, (req, res) => {
 
   exec(`sudo systemctl restart ${service.command}.service`, (error) => {
     if (error) {
-      return res.status(500).json({ error: `Failed to restart ${service.name}` });
+      return res
+        .status(500)
+        .json({ error: `Failed to restart ${service.name}` });
     }
     res.json({ message: `${service.name} restarted successfully` });
   });
@@ -98,15 +96,16 @@ router.get("/services/:id/logs", authenticateToken, (req, res) => {
     ? service.logs
     : [service.logs].filter(Boolean);
 
-  const logPromises = logFiles.map((logFile) =>
-    new Promise((resolve) => {
-      fs.readFile(logFile, "utf8", (error, data) => {
-        resolve({
-          file: logFile,
-          content: error ? `Failed to read: ${logFile}` : data,
+  const logPromises = logFiles.map(
+    (logFile) =>
+      new Promise((resolve) => {
+        fs.readFile(logFile, "utf8", (error, data) => {
+          resolve({
+            file: logFile,
+            content: error ? `Failed to read: ${logFile}` : data,
+          });
         });
-      });
-    })
+      })
   );
 
   Promise.all(logPromises)
