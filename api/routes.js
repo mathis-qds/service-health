@@ -41,6 +41,7 @@ router.post("/login", (req, res) => {
   // Set the cookie with HTTP-only and Secure flags
   res.cookie("authToken", token, {
     httpOnly: true, // Prevents JavaScript access
+    secure: true,
     sameSite: "none", // Adjust based on your frontend-backend relationship
     maxAge: 60 * 60 * 1000, // 1 hour
   });
