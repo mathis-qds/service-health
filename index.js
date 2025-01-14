@@ -4,6 +4,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
+const cors = require('cors');
 
 const app = express();
 const PORT = 3030;
@@ -14,6 +15,12 @@ app.use(session({
     secret: 'your-secret-key',
     resave: false,
     saveUninitialized: true,
+}));
+
+// Configure CORS
+app.use(cors({
+  origin: '*', // Allow requests from this origin
+  credentials: true, // Allow credentials (like cookies, authorization headers, etc.)
 }));
 
 // Serve static files from the public directory
