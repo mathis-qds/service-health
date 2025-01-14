@@ -15,11 +15,16 @@ app.use(session({
     secret: 'your-secret-key',
     resave: false,
     saveUninitialized: true,
+    cookie: {
+    httpOnly: true, // Helps mitigate XSS attacks
+    secure: true, // Set to true if using HTTPS
+    sameSite: 'none', // Use 'none' if the frontend and backend are on different domains
+  },
 }));
 
 // Configure CORS
 app.use(cors({
-  origin: '*', // Allow requests from this origin
+  origin: 'http://localhost:5173', // Allow requests from this origin
   credentials: true, // Allow credentials (like cookies, authorization headers, etc.)
 }));
 
