@@ -3,12 +3,14 @@ const fs = require("fs");
 const path = require("path");
 const cors = require("cors");
 const routes = require("./api/routes");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 const PORT = 3030;
 
 // Middleware for parsing JSON
 app.use(express.json());
+app.use(cookieParser());
 
 // Configure CORS
 app.use(

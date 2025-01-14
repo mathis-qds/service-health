@@ -11,23 +11,22 @@ const router = express.Router();
 let services = [];
 let credentials = {};
 
-// Middleware to authenticate token
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const token = authHeader.split(" ")[1];
-  jwt.verify(token, SECRET_KEY, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: "Invalid token" });
+    const token = req.cookies.authToken; // Extract token from cookie
+  
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-
-    req.user = user;
-    next();
-  });
-};
+  
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+      if (err) {
+        return res.status(403).json({ error: "Invalid token" });
+      }
+  
+      req.user = user;
+      next();
+    });
+  };  
 
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -38,7 +37,15 @@ router.post("/login", (req, res) => {
   }
 
   const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: "1h" });
-  res.json({ message: "Login successful", token });
+
+  // Set the cookie with HTTP-only and Secure flags
+  res.cookie("authToken", token, {
+    httpOnly: true, // Prevents JavaScript access
+    sameSite: "none", // Adjust based on your frontend-backend relationship
+    maxAge: 60 * 60 * 1000, // 1 hour
+  });
+
+  res.json({ message: "Login successful" });
 });
 
 // Services route
