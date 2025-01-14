@@ -9,24 +9,23 @@ const router = express.Router();
 
 // Mock service and credential data
 let services = [];
-let credentials = {};
 
 const authenticateToken = (req, res, next) => {
-    const token = req.cookies.authToken; // Extract token from cookie
-  
-    if (!token) {
-      return res.status(401).json({ error: "Unauthorized" });
+  const token = req.cookies.authToken; // Extract token from cookie
+
+  if (!token) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Invalid token" });
     }
-  
-    jwt.verify(token, SECRET_KEY, (err, user) => {
-      if (err) {
-        return res.status(403).json({ error: "Invalid token" });
-      }
-  
-      req.user = user;
-      next();
-    });
-  };  
+
+    req.user = user;
+    next();
+  });
+};
 
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
@@ -51,6 +50,7 @@ router.post("/login", (req, res) => {
 
 // Services route
 router.get("/services", authenticateToken, (req, res) => {
+  const services = req.services;
   const statusPromises = services.map(
     (service) =>
       new Promise((resolve) => {
@@ -76,6 +76,7 @@ router.get("/services", authenticateToken, (req, res) => {
 
 // Restart service route
 router.post("/services/:id/restart", authenticateToken, (req, res) => {
+  const services = req.services;
   const service = services.find((s) => s.id === parseInt(req.params.id));
 
   if (!service) {
@@ -94,6 +95,7 @@ router.post("/services/:id/restart", authenticateToken, (req, res) => {
 
 // Service logs route
 router.get("/services/:id/logs", authenticateToken, (req, res) => {
+  const services = req.services;
   const service = services.find((s) => s.id === parseInt(req.params.id));
 
   if (!service) {
@@ -123,6 +125,7 @@ router.get("/services/:id/logs", authenticateToken, (req, res) => {
 
 // Log download route
 router.get("/services/:id/logs/download", authenticateToken, (req, res) => {
+  const services = req.services;
   const service = services.find((s) => s.id === parseInt(req.params.id));
 
   if (!service) {
