@@ -176,11 +176,11 @@ router.post("/notify", (req, res) => {
 
   const timestamp = Date.now();
   const filename = `notification-${timestamp}.json`;
-  const filepath = path.join(__dirname, "./notifications", filename);
+  const filepath = path.join(__dirname, "../notifications", filename);
 
   // Ensure the notifications directory exists
-  if (!fs.existsSync(path.join(__dirname, "./notifications"))) {
-    fs.mkdirSync(path.join(__dirname, "./notifications"), { recursive: true });
+  if (!fs.existsSync(path.join(__dirname, "../notifications"))) {
+    fs.mkdirSync(path.join(__dirname, "../notifications"), { recursive: true });
   }
 
   // Write the JSON data to a file
