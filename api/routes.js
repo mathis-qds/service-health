@@ -249,7 +249,7 @@ router.get("/notifications", authenticateToken, (req, res) => {
   });
 });
 
-router.patch("/notifications/:id", (req, res) => {
+router.patch("/notifications/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { read, completed } = req.body;
 
