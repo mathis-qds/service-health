@@ -1,3 +1,4 @@
 credentials.json
 services.json
 node_modules
+notifications/*

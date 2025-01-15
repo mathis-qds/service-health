@@ -157,4 +157,101 @@ router.get("/services/:id/logs/download", authenticateToken, (req, res) => {
   });
 });
 
+// POST route to receive and save notifications
+router.post("/notify", (req, res) => {
+  const { user, re: subject, message } = req.body;
+
+  if (!user || !subject || !message) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const notification = {
+    timestamp: new Date().toISOString(),
+    user,
+    re: subject,
+    message,
+    read: false,
+    completed: false,
+  };
+
+  const timestamp = Date.now();
+  const filename = `notification-${timestamp}.json`;
+  const filepath = path.join(__dirname, "../notifications", filename);
+
+  // Ensure the notifications directory exists
+  if (!fs.existsSync(path.join(__dirname, "../notifications"))) {
+    fs.mkdirSync(path.join(__dirname, "../notifications"), { recursive: true });
+  }
+
+  // Write the JSON data to a file
+  fs.writeFile(
+    filepath,
+    JSON.stringify(notification, null, 2),
+    "utf8",
+    (err) => {
+      if (err) {
+        console.error("Failed to write file", err);
+        return res.status(500).send({ error: "Failed to save notification" });
+      }
+      res.json({ message: "Notification received and stored" });
+    }
+  );
+});
+
+router.get("/notifications", (req, res) => {
+  const directoryPath = path.join(__dirname, "../notifications");
+
+  // Check if the notifications directory exists
+  if (!fs.existsSync(directoryPath)) {
+    return res.status(404).json({ error: "No notifications found." });
+  }
+
+  // Read all files in the notifications directory
+  fs.readdir(directoryPath, (err, files) => {
+    if (err) {
+      console.error("Failed to read directory", err);
+      return res
+        .status(500)
+        .json({ error: "Failed to retrieve notifications" });
+    }
+
+    // Filter for JSON files only
+    const jsonFiles = files.filter(
+      (file) => path.extname(file).toLowerCase() === ".json"
+    );
+    const notifications = [];
+
+    // Read each file and parse JSON content
+    jsonFiles.forEach((file, index) => {
+      fs.readFile(
+        path.join(directoryPath, file),
+        "utf8",
+        (readErr, content) => {
+          if (readErr) {
+            console.error(`Failed to read file: ${file}`, readErr);
+            return res
+              .status(500)
+              .json({ error: `Failed to read notification file: ${file}` });
+          }
+          try {
+            notifications.push(JSON.parse(content));
+          } catch (parseErr) {
+            console.error(`Error parsing JSON from file: ${file}`, parseErr);
+          }
+
+          // When last file is processed, send all notifications
+          if (index === jsonFiles.length - 1) {
+            res.json(notifications);
+          }
+        }
+      );
+    });
+
+    // In case there are no JSON files
+    if (jsonFiles.length === 0) {
+      res.json(notifications);
+    }
+  });
+});
+
 module.exports = router;
