@@ -3,6 +3,7 @@ const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const jwt = require("jsonwebtoken");
+const { v4: uuidv4 } = require('uuid'); // Import UUID generator
 const SECRET_KEY = "your-secret-key";
 
 const router = express.Router();
@@ -157,45 +158,39 @@ router.get("/services/:id/logs/download", authenticateToken, (req, res) => {
   });
 });
 
-// POST route to receive and save notifications
 router.post("/notify", (req, res) => {
   const { user, re: subject, message } = req.body;
-
+  
   if (!user || !subject || !message) {
-    return res.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ error: "Missing required fields" });
   }
 
   const notification = {
-    timestamp: new Date().toISOString(),
-    user,
-    re: subject,
-    message,
-    read: false,
-    completed: false,
+      id: uuidv4(), // Generate a unique ID for each notification
+      timestamp: new Date().toISOString(),
+      user,
+      re: subject,
+      message,
+      read: false,
+      completed: false
   };
 
-  const timestamp = Date.now();
-  const filename = `notification-${timestamp}.json`;
-  const filepath = path.join(__dirname, "../notifications", filename);
+  const filename = `${notification.id}.json`; // Include the UUID in the filename for uniqueness
+  const filepath = path.join(__dirname, '../notifications', filename);
 
   // Ensure the notifications directory exists
-  if (!fs.existsSync(path.join(__dirname, "../notifications"))) {
-    fs.mkdirSync(path.join(__dirname, "../notifications"), { recursive: true });
+  if (!fs.existsSync(path.join(__dirname, '../notifications'))) {
+      fs.mkdirSync(path.join(__dirname, '../notifications'), { recursive: true });
   }
 
   // Write the JSON data to a file
-  fs.writeFile(
-    filepath,
-    JSON.stringify(notification, null, 2),
-    "utf8",
-    (err) => {
+  fs.writeFile(filepath, JSON.stringify(notification, null, 2), 'utf8', (err) => {
       if (err) {
-        console.error("Failed to write file", err);
-        return res.status(500).send({ error: "Failed to save notification" });
+          console.error('Failed to write file', err);
+          return res.status(500).send({ error: 'Failed to save notification' });
       }
-      res.json({ message: "Notification received and stored" });
-    }
-  );
+      res.json({ message: 'Notification received and stored', id: notification.id });
+  });
 });
 
 router.get("/notifications", authenticateToken, (req, res) => {
@@ -253,5 +248,48 @@ router.get("/notifications", authenticateToken, (req, res) => {
     }
   });
 });
+
+router.patch("/notifications/:id", (req, res) => {
+  const { id } = req.params;
+  const { read, completed } = req.body;
+
+  // Validate input
+  if (typeof read !== 'boolean' || typeof completed !== 'boolean') {
+      return res.status(400).json({ error: "Invalid input. 'read' and 'completed' must be boolean values." });
+  }
+
+  const directoryPath = path.join(__dirname, '../notifications');
+  const targetFile = fs.readdirSync(directoryPath).find(file => file.includes(id));
+
+  if (!targetFile) {
+      return res.status(404).json({ error: "Notification not found." });
+  }
+
+  const filepath = path.join(directoryPath, targetFile);
+  fs.readFile(filepath, 'utf8', (err, data) => {
+      if (err) {
+          console.error('Failed to read file', err);
+          return res.status(500).json({ error: 'Failed to read notification file' });
+      }
+
+      try {
+          const notification = JSON.parse(data);
+          notification.read = read;
+          notification.completed = completed;
+
+          fs.writeFile(filepath, JSON.stringify(notification, null, 2), 'utf8', (writeErr) => {
+              if (writeErr) {
+                  console.error('Failed to write file', writeErr);
+                  return res.status(500).json({ error: 'Failed to update notification' });
+              }
+              res.json({ message: 'Notification updated successfully' });
+          });
+      } catch (parseErr) {
+          console.error('Error parsing JSON', parseErr);
+          return res.status(500).json({ error: 'Error processing notification data' });
+      }
+  });
+});
+
 
 module.exports = router;
