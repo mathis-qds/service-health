@@ -198,7 +198,7 @@ router.post("/notify", (req, res) => {
   );
 });
 
-router.get("/notifications", (req, res) => {
+router.get("/notifications", authenticateToken, (req, res) => {
   const directoryPath = path.join(__dirname, "../notifications");
 
   // Check if the notifications directory exists
